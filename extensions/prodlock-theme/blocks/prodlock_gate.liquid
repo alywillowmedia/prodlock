@@ -17,6 +17,13 @@
     assign prodlock_resource_title = product.title
     if product.metafields["$app"].locked.value
       assign prodlock_locked = true
+    else
+      for prodlock_entry in prodlock_locked_product_handles
+        if prodlock_entry.handle == product.handle
+          assign prodlock_locked = true
+          break
+        endif
+      endfor
     endif
   endif
 

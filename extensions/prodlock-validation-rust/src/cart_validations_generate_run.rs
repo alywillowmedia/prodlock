@@ -2,6 +2,7 @@ use super::schema;
 use shopify_function::prelude::*;
 use shopify_function::Result;
 use serde::Deserialize;
+use std::collections::HashSet;
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -10,10 +11,26 @@ struct ProdLockSettings {
     wholesale_emails: Vec<String>,
 }
 
+#[derive(Debug, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct VisibilityResource {
+    #[serde(default)]
+    id: String,
+    #[serde(default)]
+    handle: String,
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProdLockVisibility {
+    #[serde(default)]
+    products: Vec<VisibilityResource>,
+}
+
 fn approved_emails(input: &schema::cart_validations_generate_run::Input) -> Vec<String> {
     input
         .shop()
-        .metafield()
+        .settings_metafield()
         .map(|metafield| metafield.value())
         .and_then(|value| serde_json::from_str::<ProdLockSettings>(value).ok())
         .map(|settings| {
@@ -27,10 +44,34 @@ fn approved_emails(input: &schema::cart_validations_generate_run::Input) -> Vec<
         .unwrap_or_default()
 }
 
+fn locked_products(input: &schema::cart_validations_generate_run::Input) -> HashSet<String> {
+    let mut resources = HashSet::new();
+
+    if let Some(visibility) = input
+        .shop()
+        .visibility_metafield()
+        .map(|metafield| metafield.value())
+        .and_then(|value| serde_json::from_str::<ProdLockVisibility>(value).ok())
+    {
+        for product in visibility.products {
+            if !product.id.trim().is_empty() {
+                resources.insert(product.id.trim().to_string());
+            }
+
+            if !product.handle.trim().is_empty() {
+                resources.insert(product.handle.trim().to_string());
+            }
+        }
+    }
+
+    resources
+}
+
 #[shopify_function]
 fn cart_validations_generate_run(
     input: schema::cart_validations_generate_run::Input,
 ) -> Result<schema::CartValidationsGenerateRunResult> {
+    let locked_products_from_visibility = locked_products(&input);
     let customer_email = input
         .cart()
         .buyer_identity()
@@ -51,12 +92,15 @@ fn cart_validations_generate_run(
                 variant,
             ) => {
                 let product = variant.product();
-                let is_locked = product
+                let is_locked_by_metafield = product
                     .metafield()
                     .map(|metafield| metafield.value() == "true")
                     .unwrap_or(false);
+                let is_locked_by_visibility =
+                    locked_products_from_visibility.contains(product.id())
+                        || locked_products_from_visibility.contains(product.handle());
 
-                if is_locked {
+                if is_locked_by_metafield || is_locked_by_visibility {
                     Some(product.title().to_string())
                 } else {
                     None

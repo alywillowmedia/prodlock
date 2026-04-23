@@ -8,7 +8,7 @@
           "value": "{\"wholesaleEmails\":[\"approved@example.com\"]}"
         },
         "visibilityMetafield": {
-          "value": "{\"products\":[{\"id\":\"gid://shopify/Product/1\",\"handle\":\"locked-product\",\"title\":\"Locked Product\"}]}"
+          "value": "{\"products\":[{\"id\":\"gid://shopify/Product/22\",\"handle\":\"collection-hidden-product\",\"title\":\"Collection Hidden Product\"}]}"
         }
       },
       "cart": {
@@ -19,13 +19,13 @@
           {
             "merchandise": {
               "__typename": "ProductVariant",
-              "id": "gid://shopify/ProductVariant/1",
+              "id": "gid://shopify/ProductVariant/22",
               "product": {
-                "id": "gid://shopify/Product/1",
-                "handle": "locked-product",
-                "title": "Locked Product",
+                "id": "gid://shopify/Product/22",
+                "handle": "collection-hidden-product",
+                "title": "Collection Hidden Product",
                 "metafield": {
-                  "value": "true"
+                  "value": "false"
                 }
               }
             }
@@ -39,7 +39,7 @@
           "validationAdd": {
             "errors": [
               {
-                "message": "Please sign in with an approved wholesale account before purchasing: Locked Product.",
+                "message": "Please sign in with an approved wholesale account before purchasing: Collection Hidden Product.",
                 "target": "$.cart"
               }
             ]

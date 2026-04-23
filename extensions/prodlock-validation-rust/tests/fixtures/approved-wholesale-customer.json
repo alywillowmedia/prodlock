@@ -4,8 +4,11 @@
     "target": "cart.validations.generate.run",
     "input": {
       "shop": {
-        "metafield": {
+        "settingsMetafield": {
           "value": "{\"wholesaleEmails\":[\"approved@example.com\"]}"
+        },
+        "visibilityMetafield": {
+          "value": "{\"products\":[{\"id\":\"gid://shopify/Product/1\",\"handle\":\"locked-product\",\"title\":\"Locked Product\"}]}"
         }
       },
       "cart": {
@@ -18,6 +21,8 @@
               "__typename": "ProductVariant",
               "id": "gid://shopify/ProductVariant/1",
               "product": {
+                "id": "gid://shopify/Product/1",
+                "handle": "locked-product",
                 "title": "Locked Product",
                 "metafield": {
                   "value": "true"

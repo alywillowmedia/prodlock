@@ -43,6 +43,13 @@ const PRODLOCK_THEME_SNIPPET = `{% liquid
     assign prodlock_resource_title = product.title
     if product.metafields["$app"].locked.value
       assign prodlock_locked = true
+    else
+      for prodlock_entry in prodlock_locked_product_handles
+        if prodlock_entry.handle == product.handle
+          assign prodlock_locked = true
+          break
+        endif
+      endfor
     endif
   endif
 
@@ -472,6 +479,32 @@ type MutationError = {
   message: string;
 };
 
+type VisibilityBuildQueryResponse = {
+  products: {
+    nodes: Array<{
+      id: string;
+      title: string;
+      handle: string;
+      metafield: { value: string | null } | null;
+    }>;
+  };
+  collections: {
+    nodes: Array<{
+      id: string;
+      title: string;
+      handle: string;
+      metafield: { value: string | null } | null;
+      products: {
+        nodes: Array<{
+          id: string;
+          title: string;
+          handle: string;
+        }>;
+      };
+    }>;
+  };
+};
+
 function normalizeSettings(input: unknown): ProdLockSettings {
   if (!input || typeof input !== "object") {
     return DEFAULT_SETTINGS;
@@ -821,10 +854,25 @@ export async function loadDashboardData(
     throw new Error("Unable to load the current shop.");
   }
 
+  const storedVisibility = normalizeVisibility(
+    data.shop.visibilityMetafield?.jsonValue,
+  );
+  let visibility = storedVisibility;
+
+  try {
+    const rebuiltVisibility = await buildVisibility(admin);
+    if (JSON.stringify(rebuiltVisibility) !== JSON.stringify(storedVisibility)) {
+      await saveVisibility(admin, data.shop.id, rebuiltVisibility);
+    }
+    visibility = rebuiltVisibility;
+  } catch (_error) {
+    visibility = storedVisibility;
+  }
+
   return {
     shopId: data.shop.id,
     settings: normalizeSettings(data.shop.metafield?.jsonValue),
-    visibility: normalizeVisibility(data.shop.visibilityMetafield?.jsonValue),
+    visibility,
     products: data.products.nodes.map((product) =>
       formatResource({
         id: product.id,
@@ -958,18 +1006,56 @@ export async function saveSettings(
   }
 }
 
-async function loadVisibility(admin: AdminGraphqlClient) {
-  const payload = await parseGraphql<{
-    shop: {
-      metafield: { jsonValue: ProdLockVisibility | null } | null;
-    };
-  }>(
+function mergeVisibilityResources(resources: VisibilityResource[]) {
+  const entries = new Map<string, VisibilityResource>();
+
+  for (const resource of resources) {
+    if (!resource.id || !resource.handle || !resource.title) {
+      continue;
+    }
+
+    entries.set(resource.id, {
+      id: resource.id,
+      handle: resource.handle.trim(),
+      title: resource.title.trim(),
+    });
+  }
+
+  return Array.from(entries.values()).sort((left, right) =>
+    left.title.localeCompare(right.title),
+  );
+}
+
+async function buildVisibility(admin: AdminGraphqlClient): Promise<ProdLockVisibility> {
+  const payload = await parseGraphql<VisibilityBuildQueryResponse>(
     admin.graphql(
       `#graphql
-      query ProdLockVisibility {
-        shop {
-          metafield(namespace: "prodlock", key: "visibility") {
-            jsonValue
+      query ProdLockVisibilityBuild {
+        products(first: 250, sortKey: TITLE) {
+          nodes {
+            id
+            title
+            handle
+            metafield(namespace: "$app", key: "locked") {
+              value
+            }
+          }
+        }
+        collections(first: 250, sortKey: TITLE) {
+          nodes {
+            id
+            title
+            handle
+            metafield(namespace: "$app", key: "locked") {
+              value
+            }
+            products(first: 250) {
+              nodes {
+                id
+                title
+                handle
+              }
+            }
           }
         }
       }`,
@@ -978,7 +1064,48 @@ async function loadVisibility(admin: AdminGraphqlClient) {
 
   ensureNoTopLevelErrors(payload);
 
-  return normalizeVisibility(payload.data?.shop.metafield?.jsonValue);
+  const products = payload.data?.products.nodes ?? [];
+  const collections = payload.data?.collections.nodes ?? [];
+
+  const lockedCollections = collections.filter(
+    (collection) => collection.metafield?.value === "true",
+  );
+
+  const explicitLockedProducts = products
+    .filter((product) => product.metafield?.value === "true")
+    .map((product) => ({
+      id: product.id,
+      handle: product.handle,
+      title: product.title,
+    }));
+
+  const productsFromLockedCollections = lockedCollections.flatMap((collection) =>
+    collection.products.nodes.map((product) => ({
+      id: product.id,
+      handle: product.handle,
+      title: product.title,
+    })),
+  );
+
+  return {
+    products: mergeVisibilityResources([
+      ...explicitLockedProducts,
+      ...productsFromLockedCollections,
+    ]),
+    collections: mergeVisibilityResources(
+      lockedCollections.map((collection) => ({
+        id: collection.id,
+        handle: collection.handle,
+        title: collection.title,
+      })),
+    ),
+  };
+}
+
+async function rebuildVisibility(admin: AdminGraphqlClient, shopId: string) {
+  const visibility = await buildVisibility(admin);
+  await saveVisibility(admin, shopId, visibility);
+  return visibility;
 }
 
 async function saveVisibility(
@@ -1030,8 +1157,8 @@ export async function setResourceLock(
   shopId: string,
   resourceType: ResourceType,
   resourceId: string,
-  resourceHandle: string,
-  resourceTitle: string,
+  _resourceHandle: string,
+  _resourceTitle: string,
   locked: boolean,
 ) {
   const payload = await parseGraphql<{
@@ -1074,24 +1201,7 @@ export async function setResourceLock(
     );
   }
 
-  const visibility = await loadVisibility(admin);
-  const key = resourceType === "product" ? "products" : "collections";
-  const nextEntries = visibility[key].filter((entry) => entry.id !== resourceId);
-
-  if (locked) {
-    nextEntries.push({
-      id: resourceId,
-      handle: resourceHandle,
-      title: resourceTitle,
-    });
-  }
-
-  nextEntries.sort((left, right) => left.title.localeCompare(right.title));
-
-  await saveVisibility(admin, shopId, {
-    ...visibility,
-    [key]: nextEntries,
-  });
+  await rebuildVisibility(admin, shopId);
 }
 
 export async function applyThemeIntegration(

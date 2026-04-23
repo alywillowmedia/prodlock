@@ -1,6 +1,9 @@
 query Input {
   shop {
-    metafield(namespace: "prodlock", key: "settings") {
+    settingsMetafield: metafield(namespace: "prodlock", key: "settings") {
+      value
+    }
+    visibilityMetafield: metafield(namespace: "prodlock", key: "visibility") {
       value
     }
   }
@@ -14,6 +17,8 @@ query Input {
         ... on ProductVariant {
           id
           product {
+            id
+            handle
             title
             metafield(namespace: "$app", key: "locked") {
               value
