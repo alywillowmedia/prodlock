@@ -7,12 +7,18 @@ import {
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
 
+const appUrl =
+  normalizeAppUrl(process.env.SHOPIFY_APP_URL) ||
+  normalizeVercelUrl(process.env.VERCEL_PROJECT_PRODUCTION_URL) ||
+  normalizeVercelUrl(process.env.VERCEL_URL) ||
+  "";
+
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
   apiVersion: ApiVersion.October25,
   scopes: process.env.SCOPES?.split(","),
-  appUrl: process.env.SHOPIFY_APP_URL || "",
+  appUrl,
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma) as never,
   distribution: AppDistribution.AppStore,
@@ -32,3 +38,19 @@ export const unauthenticated = shopify.unauthenticated;
 export const login = shopify.login;
 export const registerWebhooks = shopify.registerWebhooks;
 export const sessionStorage = shopify.sessionStorage;
+
+function normalizeAppUrl(value?: string) {
+  if (!value) {
+    return "";
+  }
+
+  return value.replace(/\/$/, "");
+}
+
+function normalizeVercelUrl(value?: string) {
+  if (!value) {
+    return "";
+  }
+
+  return `https://${value.replace(/\/$/, "")}`;
+}

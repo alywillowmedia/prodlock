@@ -24,10 +24,11 @@ alter default privileges for role postgres in schema public grant all on sequenc
 Then gather two connection strings from Supabase:
 
 - `DATABASE_URL`: Supavisor transaction mode (`:6543`) with `?pgbouncer=true&connection_limit=1`
-- `DIRECT_URL`: direct database string (`db.<project-ref>.supabase.co:5432`) for Prisma migrations
+- `DIRECT_URL`: on Vercel, use the Supavisor session mode string (`:5432`) for Prisma migrations
 
 Use `.env.example` as the template for your real environment variables.
 If `DIRECT_URL` is temporarily missing, the app now falls back to `DATABASE_URL` for Prisma CLI commands so builds do not die at schema-parse time, but a real `DIRECT_URL` is still recommended.
+Do not use the direct `db.<project-ref>.supabase.co:5432` host on Vercel unless you have confirmed IPv6 support or enabled Supabase's IPv4 add-on.
 
 ## 2. Vercel project
 
