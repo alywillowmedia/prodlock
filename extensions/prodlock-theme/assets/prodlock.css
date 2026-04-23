@@ -1,0 +1,108 @@
+.prodlock-locked {
+  overflow: hidden;
+}
+
+.prodlock-locked main,
+.prodlock-locked [role="main"] {
+  filter: blur(10px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.prodlock-hidden-resource {
+  display: none !important;
+}
+
+.prodlock-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.prodlock-gate__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 28, 0.58);
+  backdrop-filter: blur(6px);
+}
+
+.prodlock-gate__card {
+  position: relative;
+  width: min(100%, 520px);
+  padding: 28px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #202223;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
+}
+
+.prodlock-gate__eyebrow {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: #616b75;
+}
+
+.prodlock-gate__title {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.prodlock-gate__message,
+.prodlock-gate__meta {
+  margin: 14px 0 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #4a4f55;
+}
+
+.prodlock-gate__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.prodlock-gate__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 8px;
+  background: #111213;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.prodlock-gate__button--secondary {
+  background: #eef1f3;
+  color: #202223;
+}
+
+@media (max-width: 749px) {
+  .prodlock-gate {
+    padding: 16px;
+  }
+
+  .prodlock-gate__card {
+    padding: 22px;
+  }
+
+  .prodlock-gate__title {
+    font-size: 24px;
+  }
+
+  .prodlock-gate__actions {
+    display: grid;
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "payload": {
+    "export": "cart_validations_generate_run",
+    "target": "cart.validations.generate.run",
+    "input": {
+      "shop": {
+        "metafield": {
+          "value": "{\"wholesaleEmails\":[\"approved@example.com\"]}"
+        }
+      },
+      "cart": {
+        "buyerIdentity": {
+          "email": "retail@example.com"
+        },
+        "lines": [
+          {
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/1",
+              "product": {
+                "title": "Locked Product",
+                "metafield": {
+                  "value": "true"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "output": {
+      "operations": [
+        {
+          "validationAdd": {
+            "errors": [
+              {
+                "message": "Your account (retail@example.com) is not approved for wholesale checkout for: Locked Product.",
+                "target": "$.cart"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

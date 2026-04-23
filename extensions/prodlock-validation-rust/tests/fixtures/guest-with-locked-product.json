@@ -1,0 +1,46 @@
+{
+  "payload": {
+    "export": "cart_validations_generate_run",
+    "target": "cart.validations.generate.run",
+    "input": {
+      "shop": {
+        "metafield": {
+          "value": "{\"wholesaleEmails\":[\"approved@example.com\"]}"
+        }
+      },
+      "cart": {
+        "buyerIdentity": {
+          "email": null
+        },
+        "lines": [
+          {
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/1",
+              "product": {
+                "title": "Locked Product",
+                "metafield": {
+                  "value": "true"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "output": {
+      "operations": [
+        {
+          "validationAdd": {
+            "errors": [
+              {
+                "message": "Please sign in with an approved wholesale account before purchasing: Locked Product.",
+                "target": "$.cart"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

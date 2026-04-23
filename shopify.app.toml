@@ -1,0 +1,68 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "d0903e46643a92761cfa83cfc063be11"
+name = "prodlock"
+application_url = "https://example.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+include_config_on_deploy = true
+
+[webhooks]
+api_version = "2026-07"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/scopes_update" ]
+  uri = "/webhooks/app/scopes_update"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_products,write_products,read_themes,write_themes"
+
+[auth]
+redirect_urls = [ "https://example.com/api/auth" ]
+
+[product.metafields.app.locked]
+type = "boolean"
+name = "ProdLock Protected"
+description = "Marks this product as restricted to approved wholesale customers"
+
+  [product.metafields.app.locked.access]
+  admin = "merchant_read_write"
+
+[collection.metafields.app.locked]
+type = "boolean"
+name = "ProdLock Protected"
+description = "Marks this collection as restricted to approved wholesale customers"
+
+  [collection.metafields.app.locked.access]
+  admin = "merchant_read_write"
+
+[shop.metafields.prodlock.settings]
+type = "json"
+name = "ProdLock Settings"
+description = "Stores the wholesale email allowlist and storefront gate settings"
+
+  [shop.metafields.prodlock.settings.access]
+  admin = "merchant_read_write"
+
+[shop.metafields.prodlock.visibility]
+type = "json"
+name = "ProdLock Visibility Index"
+description = "Stores locked product and collection handles for storefront hiding"
+
+  [shop.metafields.prodlock.visibility.access]
+  admin = "merchant_read_write"
+
+[shop.metafields.prodlock.integration]
+type = "json"
+name = "ProdLock Theme Integration"
+description = "Stores the currently selected theme and installation state for ProdLock"
+
+  [shop.metafields.prodlock.integration.access]
+  admin = "merchant_read_write"

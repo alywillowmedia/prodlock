@@ -1,0 +1,18 @@
+api_version = "2026-04"
+
+[[extensions]]
+name = "t:name"
+handle = "prodlock-validation-rust"
+type = "function"
+uid = "b8150c87-06e9-dec7-a2f2-44fcafa5b5b786812dc9"
+description = "t:description"
+
+  [[extensions.targeting]]
+  target = "cart.validations.generate.run"
+  input_query = "src/cart_validations_generate_run.graphql"
+  export = "cart_validations_generate_run"
+
+  [extensions.build]
+  command = "cargo build --target=wasm32-unknown-unknown --release"
+  path = "target/wasm32-unknown-unknown/release/prodlock-validation-rust.wasm"
+  watch = ["src/**/*.rs"]

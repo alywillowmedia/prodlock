@@ -1,0 +1,35 @@
+{
+  "payload": {
+    "export": "cart_validations_generate_run",
+    "target": "cart.validations.generate.run",
+    "input": {
+      "shop": {
+        "metafield": {
+          "value": "{\"wholesaleEmails\":[\"approved@example.com\"]}"
+        }
+      },
+      "cart": {
+        "buyerIdentity": {
+          "email": "approved@example.com"
+        },
+        "lines": [
+          {
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/1",
+              "product": {
+                "title": "Locked Product",
+                "metafield": {
+                  "value": "true"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "output": {
+      "operations": []
+    }
+  }
+}

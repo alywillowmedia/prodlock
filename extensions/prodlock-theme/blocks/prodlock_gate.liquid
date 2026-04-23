@@ -1,0 +1,108 @@
+{% liquid
+  assign prodlock_settings = shop.metafields.prodlock.settings.value | default: '{}' | parse_json
+  assign prodlock_visibility = shop.metafields.prodlock.visibility.value | default: '{}' | parse_json
+  assign prodlock_wholesale_emails = prodlock_settings.wholesaleEmails | default: blank
+  assign prodlock_locked_product_handles = prodlock_visibility.products | default: blank
+  assign prodlock_locked_collection_handles = prodlock_visibility.collections | default: blank
+  assign prodlock_hide_prices = prodlock_settings.hidePrices
+  assign prodlock_login_required_message = prodlock_settings.loginRequiredMessage | default: 'Please sign in to view this wholesale product.'
+  assign prodlock_unauthorized_message = prodlock_settings.unauthorizedMessage | default: 'Your account is not approved for wholesale access yet.'
+
+  assign prodlock_locked = false
+  assign prodlock_resource_type = blank
+  assign prodlock_resource_title = blank
+
+  if template.name == 'product' and product
+    assign prodlock_resource_type = 'product'
+    assign prodlock_resource_title = product.title
+    if product.metafields["$app"].locked.value
+      assign prodlock_locked = true
+    endif
+  endif
+
+  if template.name == 'collection' and collection
+    assign prodlock_resource_type = 'collection'
+    assign prodlock_resource_title = collection.title
+    if collection.metafields["$app"].locked.value
+      assign prodlock_locked = true
+    endif
+  endif
+
+  assign prodlock_customer_email = blank
+  assign prodlock_customer_approved = false
+  if customer and customer.email
+    assign prodlock_customer_email = customer.email | downcase
+    if prodlock_wholesale_emails contains prodlock_customer_email
+      assign prodlock_customer_approved = true
+    endif
+  endif
+
+  assign prodlock_block_page = false
+  assign prodlock_gate_message = blank
+  assign prodlock_gate_reason = blank
+
+  if prodlock_locked
+    if customer == blank
+      assign prodlock_block_page = true
+      assign prodlock_gate_reason = 'guest'
+      assign prodlock_gate_message = prodlock_login_required_message
+    elsif prodlock_customer_approved == false
+      assign prodlock_block_page = true
+      assign prodlock_gate_reason = 'wholesale'
+      assign prodlock_gate_message = prodlock_unauthorized_message
+    endif
+  endif
+%}
+
+{% if prodlock_block_page %}
+  <div
+    class="prodlock-gate"
+    data-prodlock-gate
+    data-prodlock-reason="{{ prodlock_gate_reason }}"
+    data-prodlock-resource-type="{{ prodlock_resource_type }}"
+    data-prodlock-hide-prices="{{ prodlock_hide_prices | json | escape }}"
+  >
+    <div class="prodlock-gate__scrim"></div>
+    <div class="prodlock-gate__card" role="dialog" aria-modal="true" aria-labelledby="prodlock-gate-title">
+      <p class="prodlock-gate__eyebrow">ProdLock</p>
+      <h2 id="prodlock-gate-title" class="prodlock-gate__title">
+        Wholesale access required
+      </h2>
+      <p class="prodlock-gate__message">{{ prodlock_gate_message }}</p>
+      <p class="prodlock-gate__meta">
+        {{ prodlock_resource_type | capitalize }}:
+        <strong>{{ prodlock_resource_title }}</strong>
+      </p>
+
+      <div class="prodlock-gate__actions">
+        {% if customer == blank %}
+          <a class="prodlock-gate__button" href="{{ routes.account_login_url }}">
+            Sign in
+          </a>
+        {% endif %}
+        <a class="prodlock-gate__button prodlock-gate__button--secondary" href="{{ routes.root_url }}">
+          Continue shopping
+        </a>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+<script type="application/json" data-prodlock-visibility>
+  {
+    "approved": {{ prodlock_customer_approved | json }},
+    "lockedProducts": {{ prodlock_locked_product_handles | json }},
+    "lockedCollections": {{ prodlock_locked_collection_handles | json }},
+    "hidePrices": {{ prodlock_hide_prices | json }}
+  }
+</script>
+
+{% schema %}
+{
+  "name": "ProdLock Gate",
+  "target": "body",
+  "stylesheet": "prodlock.css",
+  "javascript": "prodlock.js",
+  "settings": []
+}
+{% endschema %}
