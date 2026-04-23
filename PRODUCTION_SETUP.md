@@ -27,6 +27,7 @@ Then gather two connection strings from Supabase:
 - `DIRECT_URL`: direct database string (`db.<project-ref>.supabase.co:5432`) for Prisma migrations
 
 Use `.env.example` as the template for your real environment variables.
+If `DIRECT_URL` is temporarily missing, the app now falls back to `DATABASE_URL` for Prisma CLI commands so builds do not die at schema-parse time, but a real `DIRECT_URL` is still recommended.
 
 ## 2. Vercel project
 
