@@ -30,3 +30,14 @@ model Session {
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
+
+model SupabaseHealthCheck {
+  id              Int      @id @default(autoincrement())
+  checkedAt       DateTime @default(now())
+  overallStatus   String   @default("not ok")
+  sessionStatus   String   @default("not ok")
+  migrationStatus String   @default("not ok")
+  sessionCount    Int      @default(0)
+  migrationErrors Int      @default(0)
+  error           String?
+}

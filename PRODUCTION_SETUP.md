@@ -4,24 +4,7 @@ This app is ready to run against Supabase Postgres and deploy on Vercel. There a
 
 ## 1. Supabase database
 
-Create a dedicated database user for Prisma in your new Supabase project, then give it schema privileges. In Supabase SQL editor:
-
-```sql
-create user "prisma" with password 'replace_with_a_generated_password' bypassrls createdb;
-grant "prisma" to "postgres";
-
-grant usage on schema public to prisma;
-grant create on schema public to prisma;
-grant all on all tables in schema public to prisma;
-grant all on all routines in schema public to prisma;
-grant all on all sequences in schema public to prisma;
-
-alter default privileges for role postgres in schema public grant all on tables to prisma;
-alter default privileges for role postgres in schema public grant all on routines to prisma;
-alter default privileges for role postgres in schema public grant all on sequences to prisma;
-```
-
-Then gather two connection strings from Supabase:
+Gather two connection strings from Supabase:
 
 - `DATABASE_URL`: Supavisor transaction mode (`:6543`) with `?pgbouncer=true&connection_limit=1`
 - `DIRECT_URL`: on Vercel, use the Supavisor session mode string (`:5432`) for Prisma migrations
@@ -42,6 +25,7 @@ Set these environment variables in Vercel for Production:
 - `SHOPIFY_APP_URL`
 - `DATABASE_URL`
 - `DIRECT_URL`
+- `CRON_SECRET` (optional but recommended)
 - `NODE_ENV=production`
 - `PORT=3000`
 
@@ -52,6 +36,12 @@ npm run vercel-build
 ```
 
 That build runs Prisma generate, applies pending migrations, and builds the React Router app.
+
+`vercel.json` also schedules `/cron/supabase-health` once per day. The route checks the `Session` table and Prisma migration log, then writes an `ok` / `not ok` row to `SupabaseHealthCheck`. That gives the Supabase project regular database activity and leaves a simple status trail. If `CRON_SECRET` is set, Vercel will send it as a bearer token and the endpoint will reject requests without it.
+
+## Applying Migrations
+
+Database changes are handled by Prisma migrations. Run `npm run prisma:deploy`, or let Vercel run `npm run vercel-build`. These create and update the app tables, including `Session`, `_prisma_migrations`, and `SupabaseHealthCheck`.
 
 ## 3. Shopify app config
 
